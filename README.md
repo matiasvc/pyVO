@@ -4,6 +4,8 @@ For this project you will implement part of a simple Visual Odometry project, us
 
 Please fork this repo to your own GitHub profile and work from it there. It will then be easy for you to pull down any update i push to this repo.
 
+Most of the required python packages can be safely installed from pip or conda. There are a few exceptions however. I recoment installing pyflann from source as described in [this](https://github.com/primetang/pyflann) repo. Installing the python version of openCV can be tricky, with varius issues depending on platform. Please contact me if you are having problems.
+
 Run the download script `dataset/download.sh` to download a few different datasets you can use.
 
 I recommend you implement things in the follow order:
