@@ -2,7 +2,7 @@
 
 For this project you will implement part of a simple Visual Odometry project, using Harris courner detection and a KLT-Tracker.
 
-Pleas fork this repo to your own GitHub profile and work from it there. It will then be easy for you to pull down any update i push to this repo.
+Please fork this repo to your own GitHub profile and work from it there. It will then be easy for you to pull down any update i push to this repo.
 
 Run the download script `dataset/download.sh` to download a few different datasets you can use.
 
