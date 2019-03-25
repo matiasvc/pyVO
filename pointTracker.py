@@ -20,7 +20,7 @@ def get_warped_patch(img: np.ndarray, patch_size: int,
     :param theta: The rotation of the patch in radians.
     :return: The warped image patch.
     """
-    patch_half_size = patch_size//2
+    patch_half_size = patch_size/2
     c = cos(-theta)
     s = sin(-theta)
 
