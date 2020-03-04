@@ -78,9 +78,68 @@ class KLTTracker:
         """
 
         for iteration in range(max_iterations):
-            raise NotImplementedError  # You should try to implement this without using any loops, other than this iteration loop. Otherwise it will be very slow.
 
-        self.positionHistory.append((self.pos_x, self.pos_y, self.theta))  # Add new point to positionHistory to visualize tracking
+            image_height, image_width = img.shape
+            if self.pos_x - self.patchBorder < 0 or self.pos_x + self.patchBorder >= image_width or \
+               self.pos_y - self.patchBorder < 0 or self.pos_y + self.patchBorder >= image_height:
+                return 1
+
+            image_patch = get_warped_patch(img, self.patchSize, self.pos_x, self.pos_y, self.theta)
+            image_grad_patch = get_warped_patch(img_grad, self.patchSize, self.pos_x, self.pos_y, self.theta)
+
+            patch_difference = self.trackingPatch - image_patch
+
+            warp_jacobians = np.zeros((self.patchSize, self.patchSize, 2, 3))
+            warp_jacobians[:, :, 0, 0] = 1.0
+            warp_jacobians[:, :, 1, 1] = 1.0
+
+            u_grid, v_grid = np.mgrid[-self.patchHalfSizeFloored: self.patchHalfSizeFloored + 1,
+                                      -self.patchHalfSizeFloored: self.patchHalfSizeFloored + 1]
+
+            s = sin(self.theta)
+            c = cos(self.theta)
+            warp_jacobians[:, :, 0, 2] = -s*u_grid - c*v_grid
+            warp_jacobians[:, :, 1, 2] = c*u_grid - s*v_grid
+
+            image_jacobians = image_grad_patch[:, :, np.newaxis] @ warp_jacobians
+            steepest_descent = np.sum(image_jacobians * patch_difference[:, :, np.newaxis, np.newaxis], axis=(0, 1))
+            hessian = np.sum(np.swapaxes(image_jacobians, 2, 3) @ image_jacobians, axis=(0, 1))
+
+            try:
+                summed_hessian_inv = np.linalg.inv(hessian)
+            except np.linalg.LinAlgError:
+                return 2
+
+            delta_p = summed_hessian_inv @ steepest_descent.T
+            delta_x, delta_y, delta_theta = delta_p
+
+            translation_step_length = 12
+            rotation_step_length = 1
+
+            self.translationX += translation_step_length*delta_x[0]
+            self.translationY += translation_step_length*delta_y[0]
+            self.theta += rotation_step_length*delta_theta[0]
+
+            ### Uncomment these lines to visualize the patch optimization
+            # cv2.imshow('tracking patch', self.trackingPatch)
+            # cv2.imshow('image patch', image_patch)
+            # cv2.imshow('patch difference', patch_difference)
+            # cv2.waitKey(50)
+
+            if np.linalg.norm(delta_p) < min_delta_length:
+                break
+
+        # Calculate final error
+        image_patch = get_warped_patch(img, self.patchSize, self.pos_x, self.pos_y, self.theta)
+        patch_difference = self.trackingPatch - image_patch
+        avg_error = np.sum(np.square(patch_difference)) / self.patchSize**2
+
+        self.positionHistory.append((self.pos_x, self.pos_y, self.theta))
+
+        if avg_error >= max_error:
+            return 3
+        else:
+            return 0
 
 
 class PointTracker:
